@@ -24,102 +24,43 @@ interface CartItemsAmount {
 const Home = (): JSX.Element => {
   const [products, setProducts] = useState<ProductFormatted[]>([]);
   const { addProduct, cart } = useCart();
-  const [myCart, setMyCart] = useState<CartItemsAmount>({})
+
+  // const [myCart, setMyCart] = useState<CartItemsAmount>({})
   
-    const cartItemsAmount = cart.reduce((pastProduct, currentProduct) => {
-          // const { id } = currentProduct;
-          return { ...pastProduct, 
-          [currentProduct.id]: currentProduct.amount
-        };
+  const cartItemsAmount = cart.reduce((pastProduct, currentProduct) => {
+    // const { id } = currentProduct;
+    return(
+      { ...pastProduct, 
+        [currentProduct.id]: currentProduct.amount
+      }
+    ) 
 
-      }, {} as CartItemsAmount);
-    
+  }, {} as CartItemsAmount);
+  
+  // useEffect(()=> {
 
-  // setMyCart(cartItemsAmount)
+  //   setMyCart(cartItemsAmount)
 
-  // const cartItemsAmount = cart.reduce((sumAmount, product) => {
-  //   // TODO
-  // }, {} as CartItemsAmount)
+  // },[cart])
 
-  useEffect(()=> {
-
-    // const cartItemsAmount = cart.reduce((pastProduct, currentProduct) => {
-    //       // const { id } = currentProduct;
-    //   return { ...pastProduct, 
-    //   [currentProduct.id]: currentProduct.amount
-    // };
-
-    // }, {} as CartItemsAmount);
-
-    setMyCart(cartItemsAmount)
-
-  },[cart])
-
-  // const [myCart, setMyCart] = useState<CartItemsAmount>(() => {
-
-  //   if(cart.length !== 0){
-
-  //       return cart.reduce((pastProduct, currentProduct) => {
-  //         // const { id } = currentProduct;
-  //         return { ...pastProduct, 
-  //         [currentProduct.id]: currentProduct.amount
-  //       };
-
-  //     }, {});
-
-  //   }
-
-  //   return {}
-
-  // });
-
-  console.log(myCart)
-
-  // let initialObjectProducts = {}
-
-  // const productsKeyAmount = cart.reduce((pastProduct, currentProduct) => {
-  //   // const { id } = currentProduct;
-  //   return { ...pastProduct, 
-  //     [currentProduct.id]: currentProduct.amount
-  //   };
-
-  // }, myCart);
-
-
-
-  // console.log(productsKeyAmount)
-
-  // setMyCart(productsKeyAmount)
-
+  // console.log(myCart)
   useEffect(() => {
     async function loadProducts() {
-      // TODO
 
-      // let response 
+      const response = await api.get<ProductFormatted[]>('/products');
+      const data = response.data.map(product => ({
+        ...product,
+        priceFormatted : formatPrice(product.price)
+      }))
 
-      await api.get('/products').then(response => setProducts(response.data));
-
-      // await api.get('/products').then(response => console.log(response.data));
-
-      // setProducts(response);
-      // console.log(response.data);
+      setProducts(data)
     }
 
     loadProducts();
   }, []);
 
-  async function handleAddProduct(id: number) {
-    // let key = id
-
-    await addProduct(id)
-    // setMyCart(cart)
-    
-    // TODO
-    // const list = [...myCart, id: '1']
-    // let a = [...myCart];
-    // setMyCart([...myCart,  key: 0])
-
-
+  function handleAddProduct(id: number) {
+    addProduct(id)
   }
 
   return (
@@ -131,9 +72,9 @@ const Home = (): JSX.Element => {
 
                 <li key={product.id}>
 
-                  <img src={product.image} alt="Tênis de Caminhada Leve Confortável" />
+                  <img src={product.image} alt={product.title} />
                   <strong>{product.title}</strong>
-                  <span>{formatPrice(product.price)}</span>
+                  <span>{product.priceFormatted}</span>
                   <button
                     type="button"
                     data-testid="add-product-button"

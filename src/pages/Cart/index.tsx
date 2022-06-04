@@ -21,61 +21,42 @@ interface Product {
 const Cart = (): JSX.Element => {
   const { cart, removeProduct, updateProductAmount } = useCart();
 
-  console.log(cart)
+  // console.log(cart)
 
-  const totalPrice = cart.reduce((acc, product)=> {
-    acc += product.price * product.amount
-    return acc
+  // const totalPrice = cart.reduce((acc, product)=> {
+  //   acc += product.price * product.amount
+  //   return acc
 
-  },0)
+  // },0)
 
   // console.log(totalPrice)
 
-  // const cartFormatted = cart.map(product => ({
-  //   // TODO
-  // }))
-  // const total =
-  //   formatPrice(
-  //     cart.reduce((sumTotal, product) => {
-  //       // TODO
-  //     }, 0)
-  //   )
+  const cartFormatted = cart.map(product => ({
+    ...product, 
+    priceFormated: formatPrice(product.price),
+    subTotal: formatPrice(product.price * product.amount)
+    
+  }))
+
+  const total =
+    formatPrice(
+      cart.reduce((sumTotal, product) => {
+        sumTotal += product.price * product.amount
+        return sumTotal
+      }, 0)
+    )
 
   function handleProductIncrement(product: Product) {
-    // TODO
-
-    // console.log(product)
-    const newProduct = {...product};
-    newProduct.amount +=1
-    const {id, amount} = newProduct;
-
-    const productFormated = {
-      productId: id,
-      amount,
-    }
-    updateProductAmount(productFormated)
+    updateProductAmount({productId: product.id, amount: product.amount + 1})
   }
 
   function handleProductDecrement(product: Product) {
-    // TODO
-
-    const newProduct = {...product};
-    newProduct.amount -=1
-    const {id, amount} = newProduct;
-
-    const productFormated = {
-      productId: id,
-      amount,
-    }
-    updateProductAmount(productFormated)
+    updateProductAmount({productId: product.id, amount: product.amount - 1})
 
   }
 
   function handleRemoveProduct(productId: number) {
-    // TODO
     removeProduct(productId)
-    // alert(productId)
-
   }
 
   return (
@@ -93,7 +74,7 @@ const Cart = (): JSX.Element => {
         <tbody>
 
           {
-            cart.map((product) => (
+            cartFormatted.map((product) => (
 
               <tr key={product.id} data-testid="product">
                 <td>
@@ -101,7 +82,7 @@ const Cart = (): JSX.Element => {
                 </td>
                 <td>
                   <strong>{product.title}</strong>
-                  <span>{formatPrice(product.price)}
+                  <span>{product.priceFormated}
                   </span>
                 </td>
                 <td>
@@ -130,7 +111,7 @@ const Cart = (): JSX.Element => {
                   </div>
                 </td>
                 <td>
-                  <strong>{formatPrice(product.price * product.amount)}
+                  <strong>{product.subTotal}
                   </strong>
                 </td>
                 <td>
@@ -154,7 +135,7 @@ const Cart = (): JSX.Element => {
 
         <Total>
           <span>TOTAL</span>
-          <strong>{formatPrice(totalPrice)}</strong>
+          <strong>{total}</strong>
         </Total>
       </footer>
     </Container>

@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import { Product, Stock } from '../types';
@@ -29,50 +29,36 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       // console.log(storagedCart)
       return JSON.parse(storagedCart);
     }
-    
     return [];
   });
 
-  // useEffect(() => {
-  //   // console.log(cart.length)
-  //   if(cart.length !== 0){
-  //     // alert('cacau')
-  //     localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart))
+  const prevCartRef = useRef<Product[]>();
 
-  //   }
-  // },[cart])
+  useEffect(() => {
+    prevCartRef.current = cart;
+  })
+  const cartPreviousValue = prevCartRef.current ?? cart;
+
+  // bellow to set in localstore whenever it changes 
+  useEffect(() => {
+    if(cartPreviousValue !== cart){
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart))
+    }
+  },[ cart, cartPreviousValue])
 
   const addProduct = async (productId: number) => {
     try {
-      // TODO
-      // if(cart.length !== 0){
-
-
-      //   const currentCartStorage = [...cart];
-      //   const productExistsStorage = currentCartStorage.find(product => product.id === productId)
-        
-      //   // if the requested product exists in the cart[localstorage], it will enter in the if below
-      //   if(productExistsStorage){
-      //     console.log(productExistsStorage)
-      //     productExistsStorage.amount += 1
-      //     setCart(currentCartStorage)
-      //     return
-      //   }
-        
-      // }
 
       const updatedCart = [...cart];
-
       const productExists = updatedCart.find(product => product.id === productId);
 
       const stock = await api.get(`stock/${productId}`)
       const currentAmountProductStock = stock.data.amount
-      console.log(stock.data.amount)
-
+      // console.log(stock.data.amount)
 
       const currentAmount = productExists ? productExists.amount: 0;
       const productAmountRequested = currentAmount + 1;
-      console.log(currentAmount)
+      // console.log(currentAmount)
 
       if(productAmountRequested > currentAmountProductStock){
         toast.error('Quantidade solicitada fora de estoque');
@@ -83,7 +69,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         productExists.amount = productAmountRequested
         // setCart(updatedCart)
         // localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
-
       }
       else{
 
@@ -94,63 +79,39 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         }
 
         updatedCart.push(newProduct)
-
-        // productData.data.amount = 1;
-        // const currentCart = [...updatedCart, productData.data]
-        // setCart(currentCart)
-        // localStorage.setItem('@RocketShoes:cart', JSON.stringify(currentCart))
       }
-
       setCart(updatedCart)
-      localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
+      // localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
       
-
-      // setCart(updatedCart)
-      
-
-      // console.log(productExists)
-      // if(productExists){
-      //   // productExists.amount += 1 ;
-      //   // const productAmountRequested = [productExists.amount];
-
-      //   // productAmountRequested > currentAmountProductStock && alert('erro')
-      //   // setCart(updatedCart)
-
-      // }else{ // if the product dont exists in cart
-        
-      //   const product = await api.get(`products/${productId}`)
-      //   product.data.amount = 1;
-      //   const currentCart = [...updatedCart, product.data]
-      //   setCart(currentCart)
-      // }
-
-      // console.log(cart)
-      
-
-
     } catch {
-      // TODO
       toast.error('Erro na adição do produto');
     }
   };
 
   const removeProduct = (productId: number) => {
     try {
-      // TODO
-      const productsCart = [...cart]
+      const updatedCart = [...cart]
+      // const newUpdatedCart = updatedCart.filter((product) => (product.id !== productId))
 
+      const productToBeRemovedIndex = updatedCart.findIndex((product) => (product.id === productId))
+      
+      if(productToBeRemovedIndex >= 0){
+        updatedCart.splice(productToBeRemovedIndex, 1)
+        setCart(updatedCart)
+        // localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
+      }else{
+        throw Error();
 
-      const newProductsCart = productsCart.filter((product) => (product.id !== productId))
+      }
 
-      localStorage.setItem('@RocketShoes:cart', JSON.stringify(newProductsCart))
-
-      setCart(newProductsCart)
+      // if(newUpdatedCart === null || undefined){
+      //   throw Error();
+      //   return;
+      // }
 
 
     } catch {
-      // TODO
-      toast.error('Erro na exclusão do produto');
-
+      toast.error('Erro na remoção do produto');
     }
   };
 
@@ -159,43 +120,39 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-      // TODO
         const amountRequested = amount;
-        let stock = null;
-        let currentAmountProductStock;
-
-        const productsCart = [...cart]
-        const productToBeUpdated = productsCart.filter((product) => (product.id == productId))
-
-        // bellow i do this check, because if the user clicks on the (button -minus) it's unnecessary to make the api call
-        if(amountRequested > productToBeUpdated[0].amount){
-          stock = await api.get(`stock/${productId}`)
-          // alert('called')
+        if(amountRequested <= 0){
+          return;
         }
 
-        if(stock){
-          currentAmountProductStock = stock.data.amount
-        }  
-        // const currentAmountProductStock = stock.data.amount
+        const stock = await api.get(`stock/${productId}`)
+        const currentAmountProductStock = stock.data.amount;
 
         if(amountRequested > currentAmountProductStock){
           // console.log(currentAmountProductStock)
           toast.error('Quantidade solicitada fora de estoque');
-          return
-          
+          return;
         }
 
-        // bellow i am acessing the position 0, because the productToBeUpdated is an array with only one position always
-        productToBeUpdated[0].amount = amountRequested
-        // console.log(productToBeUpdated)
+        const updatedCart = [...cart]
+        const productExists = updatedCart.find((product) => (product.id === productId))
+        if(productExists){
+          productExists.amount = amountRequested
 
-        // console.log(productsCart)
-        localStorage.setItem('@RocketShoes:cart', JSON.stringify(productsCart))
-        setCart(productsCart)
+          setCart(updatedCart)
+          // localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
+        }else{
+          throw Error();
+        }
+        // bellow i do this check, because if the user clicks on the (button -minus) it's unnecessary to make the api call
+  
+        // const currentAmountProductStock = stock.data.amount
 
-        // console.log(productId, amount)
+        // bellow i am acessing the position 0, because the productExists is an array with only one position always
+
+
     } catch {
-      // TODO
+      toast.error('Erro na alteração de quantidade do produto')
     }
   };
 
